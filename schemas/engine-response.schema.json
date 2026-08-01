@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkBuddy AI Shopping Engine Response",
+  "type": "object",
+  "properties": {
+    "engine_version": {"type": "string"},
+    "state": {"type": "object"},
+    "state_update": {"type": "object"},
+    "search_plan": {"type": "object"},
+    "ranking": {"type": "object"},
+    "pricing": {"type": "object"},
+    "reviews": {"type": "object"},
+    "merchants": {"type": "object"},
+    "source_quality": {"type": "object"},
+    "report": {"type": "object"},
+    "compliance": {"type": "object"}
+  },
+  "additionalProperties": true
+}

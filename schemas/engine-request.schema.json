@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkBuddy AI Shopping Engine Request",
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": ["analyze", "update_state", "rank", "price", "reviews", "source_quality", "merchants", "search_plan", "listings", "clarification", "capabilities"],
+      "default": "analyze"
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "category": {"type": "string"},
+        "stage": {"type": "string"},
+        "budget": {"type": ["number", "object", "null"]},
+        "currency": {"type": ["string", "null"]},
+        "location": {"type": "object"},
+        "hard_constraints": {"type": "array", "items": {"$ref": "#/$defs/constraint"}},
+        "preferences": {"type": "array", "items": {"$ref": "#/$defs/preference"}},
+        "rejections": {"type": "array", "items": {"type": "string"}},
+        "desired_bundle_items": {"type": "array", "items": {"type": "string"}},
+        "search_depth": {"type": "string", "enum": ["quick", "normal", "deep"]}
+      },
+      "additionalProperties": true
+    },
+    "patch": {
+      "type": "object",
+      "properties": {
+        "set": {"type": "object"},
+        "unset": {"type": "array", "items": {"type": "string"}},
+        "add_hard_constraints": {"type": "array", "items": {"$ref": "#/$defs/constraint"}},
+        "remove_hard_constraints": {"type": "array", "items": {"type": "string"}},
+        "add_preferences": {"type": "array", "items": {"$ref": "#/$defs/preference"}},
+        "remove_preferences": {"type": "array", "items": {"type": "string"}},
+        "add_rejections": {"type": "array", "items": {"type": "string"}},
+        "add_confirmed_eligibility": {"type": "array", "items": {"type": "object"}},
+        "add_pending": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": false
+    },
+    "candidates": {"type": "array", "items": {"$ref": "#/$defs/candidate"}, "maxItems": 500},
+    "offers": {"type": "array", "items": {"$ref": "#/$defs/offer"}, "maxItems": 500},
+    "reviews": {"type": "array", "items": {"$ref": "#/$defs/review"}, "maxItems": 1500},
+    "documents": {"type": "array", "items": {"$ref": "#/$defs/document"}, "maxItems": 300},
+    "merchants": {"type": "array", "items": {"$ref": "#/$defs/merchant"}, "maxItems": 200},
+    "needs": {
+      "type": "object",
+      "properties": {
+        "member_price": {"type": "boolean"},
+        "account_coupon": {"type": "boolean"},
+        "regional_subsidy": {"type": "boolean"},
+        "site_search": {"type": "boolean"},
+        "expanded_reviews": {"type": "boolean"},
+        "stock_by_location": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "browser_authorization": {"type": ["boolean", "null"]},
+    "provided_sources": {"type": "array", "items": {"type": "object"}},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 5}
+  },
+  "$defs": {
+    "preference": {
+      "type": "object",
+      "required": ["key"],
+      "properties": {
+        "key": {"type": "string"},
+        "importance": {"type": "string", "enum": ["only", "exclusive", "critical", "must", "most_important", "high", "normal", "medium", "low"]},
+        "weight": {"type": ["number", "null"], "minimum": 0},
+        "scope": {"type": "string", "enum": ["task", "persistent"]}
+      },
+      "additionalProperties": true
+    },
+    "constraint": {
+      "type": "object",
+      "required": ["key", "value"],
+      "properties": {
+        "key": {"type": "string"},
+        "op": {"type": "string", "enum": ["eq", "neq", "lt", "lte", "gt", "gte", "in", "not_in", "contains", "truthy", "range"]},
+        "value": {}
+      },
+      "additionalProperties": true
+    },
+    "candidate": {
+      "type": "object",
+      "required": ["id", "match_scores"],
+      "properties": {
+        "id": {"type": ["string", "number"]},
+        "name": {"type": "string"},
+        "attributes": {"type": "object"},
+        "match_scores": {"type": "object", "additionalProperties": {"type": ["number", "null"], "minimum": 0, "maximum": 1}},
+        "labels": {"type": "array", "items": {"type": "string"}},
+        "evidence_completeness": {"type": "number", "minimum": 0, "maximum": 1},
+        "evidence_credibility": {"type": "number", "minimum": 0, "maximum": 1},
+        "strengths": {"type": "array", "items": {"type": "string"}},
+        "tradeoffs": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "discount": {
+      "type": "object",
+      "required": ["name", "amount"],
+      "properties": {
+        "name": {"type": "string"},
+        "amount": {"type": "number", "minimum": 0},
+        "eligibility": {"enum": [true, false, "confirmed", "ineligible", "unknown"]},
+        "lawful": {"type": "boolean"},
+        "required_qualification": {"type": "string"},
+        "reason": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "offer": {
+      "type": "object",
+      "required": ["id", "base_price"],
+      "properties": {
+        "id": {"type": ["string", "number"]},
+        "candidate_id": {"type": ["string", "number", "null"]},
+        "merchant_id": {"type": ["string", "number", "null"]},
+        "platform": {"type": "string"},
+        "base_price": {"type": "number", "minimum": 0},
+        "shipping": {"type": "number", "minimum": 0},
+        "tax": {"type": "number", "minimum": 0},
+        "required_costs": {"type": "number", "minimum": 0},
+        "discounts": {"type": "array", "items": {"$ref": "#/$defs/discount"}},
+        "membership": {"type": ["object", "null"]},
+        "trade_in": {
+          "type": ["object", "null"],
+          "properties": {
+            "value": {"type": "number", "minimum": 0},
+            "has_eligible_device": {"type": "boolean"},
+            "rules_verified": {"type": "boolean"},
+            "eligible_device_acquisition_cost": {"type": "number", "minimum": 0},
+            "acquisition_allowed_by_rules": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        },
+        "bundle_items": {"type": "array", "items": {"type": "object"}},
+        "conditions": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "review": {
+      "type": "object",
+      "required": ["id", "sentiment"],
+      "properties": {
+        "id": {"type": ["string", "number"]},
+        "candidate_id": {"type": ["string", "number", "null"]},
+        "source_group": {"type": "string", "enum": ["verified_purchase", "community", "objective"]},
+        "age_days": {"type": "integer", "minimum": 0},
+        "sentiment": {"type": "number", "minimum": -1, "maximum": 1},
+        "has_image": {"type": "boolean"},
+        "has_video": {"type": "boolean"},
+        "negative_follow_up": {"type": "boolean"},
+        "merchant_dispute": {"type": "boolean"},
+        "author_product_review_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "is_kol": {"type": "boolean"},
+        "is_commercial_reviewer": {"type": "boolean"},
+        "obvious_brand_copy": {"type": "boolean"},
+        "specific_personal_detail": {"type": "boolean"},
+        "duplicate_positive": {"type": "boolean"},
+        "seo_geo_aeo_template": {"type": "boolean"},
+        "non_product_operational_text": {"type": "boolean"},
+        "source_independence": {"type": "number", "minimum": 0, "maximum": 1},
+        "text_length": {"type": "integer", "minimum": 0},
+        "topics": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "document": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": ["string", "number"]},
+        "title": {"type": "string"},
+        "text": {"type": "string"},
+        "author_id": {"type": "string"},
+        "author_post_count": {"type": "integer", "minimum": 0},
+        "author_product_review_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "default_avatar": {"type": "boolean"},
+        "structured_for_ai": {"type": "boolean"},
+        "non_product_operational_text": {"type": "boolean"},
+        "mentions": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "merchant": {
+      "type": "object",
+      "required": ["id", "channel_type"],
+      "properties": {
+        "id": {"type": ["string", "number"]},
+        "name": {"type": "string"},
+        "channel_type": {"type": "string", "enum": ["brand_official", "platform_self_operated", "official_flagship", "authorized_store", "dealer", "third_party", "individual_secondhand", "unknown"]},
+        "business_identity_verified": {"type": ["boolean", "null"]},
+        "authorization_verified": {"type": ["boolean", "null"]},
+        "invoice_entity_clear": {"type": ["boolean", "null"]},
+        "warranty_clear": {"type": ["boolean", "null"]},
+        "return_policy_clear": {"type": ["boolean", "null"]},
+        "platform_escrow": {"type": ["boolean", "null"]},
+        "recent_dispute_signal": {"type": "number", "minimum": 0, "maximum": 1},
+        "fulfillment_risk": {"type": "number", "minimum": 0, "maximum": 1},
+        "off_platform_payment_requested": {"type": "boolean"},
+        "credential_request": {"type": "boolean"},
+        "mixed_authenticity_allegations": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
